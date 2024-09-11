@@ -29,10 +29,10 @@ def make_data_stride_torch(data_seq):
 
 def make_D_tensor(diff_seq, data_stride):
     # diff_seq shape : (QUANTITY_NUM, TIME_LENGTH), index : ik
-    # data_stride shape : (QUANTITY_NUM, QUANTITY_NUM, SUSCEPT_LENGTH), index : jkl
-    # First, we need to cut the k range as [SUSCEPT_LENGHT-1:TIME_LENGTH]
+    # data_stride shape : (QUANTITY_NUM, TIME_LENGTH, SUSCEPT_LENGTH), index : jkl
+    # First, we need to cut the k range as [SUSCEPT_LENGTH-1:TIME_LENGTH]
     new_diff_seq = diff_seq[:, SUSCEPT_LENGTH-1:]
-    new_data_stride = data_stride[:, :, :TIME_LENGTH-SUSCEPT_LENGTH+1]
+    new_data_stride = data_stride[:, SUSCEPT_LENGTH-1:, :]
     D_tensor = torch.einsum('ik,jkl->ijl', new_diff_seq, new_data_stride)
     return D_tensor
 
