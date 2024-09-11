@@ -1,9 +1,11 @@
 import numpy as np
 import torch
 
-TIME_LENGTH = 100
+import matplotlib.pyplot as plt
+
+TIME_LENGTH = 1000
 QUANTITY_NUM = 3
-SUSCEPT_LENGTH = 4
+SUSCEPT_LENGTH = 30
 
 def make_diff_seq_torch(data_seq):
     # Compute the difference along the second dimension
@@ -61,10 +63,30 @@ def make_susceptibility_tensor(D_tensor, Y_tensor):
     susceptibility = torch.einsum('ipq,pqjl->ijl', D_tensor, Y_tensor_inv)
     return susceptibility
 
+def plot_susceptibility(susceptibility):
+    # susceptibility shape : (QUANTITY_NUM, QUANTITY_NUM, SUSCEPT_LENGTH), index : ijl
+    # for each i, j, plot the susceptibility with different subplot
+
+    fig, axs = plt.subplots(QUANTITY_NUM, QUANTITY_NUM, figsize=(10, 10))
+    for i in range(QUANTITY_NUM):
+        for j in range(QUANTITY_NUM):
+            axs[i, j].plot(susceptibility[i, j, :].detach().numpy())
+            axs[i, j].set_title(f'({i}, {j})')
+            axs[i, j].grid(True)
+    plt.show()
+
+
 if __name__ == '__main__':
+    # make example data
+    row_1 = [np.cos(2*np.pi*0.001*i) for i in range(TIME_LENGTH)]
+    row_2 = [np.sin(2*np.pi*0.002*i + 1) for i in range(TIME_LENGTH)]
+    row_3 = [np.cos(2*np.pi*0.003*i + 3) for i in range(TIME_LENGTH)]
+
     data_seq = torch.tensor(np.random.rand(QUANTITY_NUM, TIME_LENGTH))
     diff_seq = make_diff_seq_torch(data_seq)
     data_stride = make_data_stride_torch(data_seq)
     D_tensor = make_D_tensor(diff_seq, data_stride)
     Y_tensor = make_Y_tensor(data_stride)
     susceptibility = make_susceptibility_tensor(D_tensor, Y_tensor)
+
+    plot_susceptibility(susceptibility)
