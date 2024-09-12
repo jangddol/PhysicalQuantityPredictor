@@ -159,11 +159,10 @@ class SingleDataSeq(DataSeq):
         return susceptibility_tensor
     
     def get_loss(self):
-        return 0
-    
-    def guess_next_data(self, guessing_length):
-        return 0
-    
+        loss_term1 = torch.einsum('ijl,jkl->ik', self.susceptibility_tensor, self.data_stride)
+        loss_term2 = self.diff_seq
+        loss = torch.sum((loss_term1 - loss_term2) ** 2)
+        return loss
 class MultipleDataSeq(DataSeq):
     def __init__(self, data_seq, suscept_length):
         super().__init__(data_seq, suscept_length)
@@ -219,7 +218,10 @@ class MultipleDataSeq(DataSeq):
         return susceptibility_tensor
 
     def get_loss(self):
-        return 0
+        loss_term1 = [torch.einsum('ijl,jkl->ik', self.susceptibility_tensor, data_stride) for data_stride in self.data_stride]
+        loss_term2 = self.diff_seq
+        loss = sum([torch.sum((loss_term1[i] - loss_term2[i]) ** 2) for i in range(len(loss_term1))])
+        return loss
     
     def guess_next_data(self, guessing_length):
         return 0
