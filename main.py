@@ -1,69 +1,46 @@
+import datetime
 import numpy as np
 import torch
-
 import matplotlib.pyplot as plt
 
-def make_diff_seq_torch(data_seq):
-    # data_seq shape : (QUANTITY_NUM, TIME_LENGTH), index : ik
-    # Compute the difference along the second dimension
-    QUANTITY_NUM, _ = data_seq.shape
-    diff_seq = torch.diff(data_seq, dim=1)
-    
-    # Append a column of zeros to match the original shape
-    zero_column = torch.zeros(QUANTITY_NUM, 1)
-    diff_seq = torch.cat((diff_seq, zero_column), dim=1)
-    
-    return diff_seq
+from dataseq import MultipleDataSeq, SingleDataSeq
 
-def make_data_stride_torch(data_seq, suscept_length):
-    # data_seq shape : (QUANTITY_NUM, TIME_LENGTH), index : ik
-    _, TIME_LENGTH = data_seq.shape
-    # Create an index tensor for the strides
-    indices = torch.arange(TIME_LENGTH).unsqueeze(1) - torch.arange(suscept_length).unsqueeze(0)
-    
-    # Use advanced indexing to create the data_stride tensor
-    data_stride = data_seq[:, indices]
+def load_log(file_path):
+    # the form of the log file is as follows:
+    # 2024-09-06 15:38:49, 0.00, 0.00, 0.00, 0.00, 0.00
+    # YYYY-MM-DD HH:MM:SS, Tip_flow, Shield_flow, Bypass_flow, Head_temp, Tip_temp
+    # I want to make a array of the data, including the time and the data
+    # I will return time_array, Tip_flow, Shield_flow, Bypass_flow, Head_temp, Tip_temp arrays
+    # It is important that the time string should be casted to a time object
+    time_array = []
+    Tip_flow = []
+    Shield_flow = []
+    Bypass_flow = []
+    Head_temp = []
+    Tip_temp = []
+    with open(file_path, 'r') as f:
+        for line in f:
+            data = line.split(',')
+            time_str = data[0]
+            time_obj = datetime.datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
+            time_array.append(time_obj)
+            Tip_flow.append(float(data[1]))
+            Shield_flow.append(float(data[2]))
+            Bypass_flow.append(float(data[3]))
+            Head_temp.append(float(data[4]))
+            Tip_temp.append(float(data[5]))
+    return np.array(time_array), np.array(Tip_flow), np.array(Shield_flow), np.array(Bypass_flow), np.array(Head_temp), np.array(Tip_temp)
 
-    # mask is 1, then replace with 0
-    data_stride[:, indices < 0] = 0
-    
-    return data_stride
-
-def make_D_tensor(diff_seq, data_stride):
-    # diff_seq shape : (QUANTITY_NUM, TIME_LENGTH), index : ik
-    # data_stride shape : (QUANTITY_NUM, TIME_LENGTH, SUSCEPT_LENGTH), index : jkl
-    # First, we need to cut the k range as [SUSCEPT_LENGTH-1:TIME_LENGTH]
-    _, _, SUSCEPT_LENGTH = data_stride.shape
-    new_diff_seq = diff_seq[:, SUSCEPT_LENGTH-1:]
-    new_data_stride = data_stride[:, SUSCEPT_LENGTH-1:, :]
-    D_tensor = torch.einsum('ik,jkl->ijl', new_diff_seq, new_data_stride)
-    return D_tensor
-
-def make_Y_tensor(data_stride):
-    # data_stride shape : (QUANTITY_NUM, TIME_LENGTH, SUSCEPT_LENGTH), index : jkl
-    # copied_strid shape : (QUANTITY_NUM, TIME_LENGTH, SUSCEPT_LENGTH), index : pkq
-    # Y_tensor shape : (QUANTITY_NUM, SUSCEPT_LENGTH, QUANTITY_NUM, SUSCEPT_LENGTH), index : pqjl
-    # First, we need to cut the k range as [SUSCEPT_LENGHT-1:TIME_LENGTH]
-    _, TIME_LENGTH, SUSCEPT_LENGTH = data_stride.shape
-    new_data_stride = data_stride[:, :TIME_LENGTH-SUSCEPT_LENGTH+1:, ]
-    Y_tensor = torch.einsum('jkl,pkq->pqjl', new_data_stride, new_data_stride)
-    return Y_tensor
-
-def make_susceptibility_tensor(D_tensor, Y_tensor):
-    # D_tensor shape : (QUANTITY_NUM, QUANTITY_NUM, SUSCEPT_LENGTH), index : ipq
-    # Y_tensor shape : (QUANTITY_NUM, SUSCEPT_LENGTH, QUANTITY_NUM, SUSCEPT_LENGTH), index : pqjl
-    # susceptibility shape : (QUANTITY_NUM, QUANTITY_NUM, SUSCEPT_LENGTH), index : ijl
-    # My linear equation is D_tensor = susceptibility * Y_tensor
-    # So, susceptibility = D_tensor * Y_tensor^-1
-    QUANTITY_NUM, _, SUSCEPT_LENGTH = D_tensor.shape
-    Y_tensor_reshaped = Y_tensor.view(QUANTITY_NUM * SUSCEPT_LENGTH, QUANTITY_NUM * SUSCEPT_LENGTH)
-    # Compute the inverse of the reshaped tensor
-    Y_tensor_inv_reshaped = torch.inverse(Y_tensor_reshaped)
-    # Reshape back to the original 4D shape
-    Y_tensor_inv = Y_tensor_inv_reshaped.view(QUANTITY_NUM, SUSCEPT_LENGTH, QUANTITY_NUM, SUSCEPT_LENGTH)
-    
-    susceptibility = torch.einsum('ipq,pqjl->ijl', D_tensor, Y_tensor_inv)
-    return susceptibility
+def cut_data_from_to(_from: datetime.datetime, _to: datetime.datetime, time_array: np.ndarray, Tip_flow: np.ndarray, Shield_flow: np.ndarray, Bypass_flow: np.ndarray, Head_temp: np.ndarray, Tip_temp: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    # I will return the data between _from and _to
+    mask = (time_array >= _from) & (time_array <= _to)
+    new_time_array = time_array[mask]
+    new_Tip_flow = Tip_flow[mask]
+    new_Shield_flow = Shield_flow[mask]
+    new_Bypass_flow = Bypass_flow[mask]
+    new_Head_temp = Head_temp[mask]
+    new_Tip_temp = Tip_temp[mask]
+    return new_time_array, new_Tip_flow, new_Shield_flow, new_Bypass_flow, new_Head_temp, new_Tip_temp
 
 def plot_susceptibility(susceptibility):
     # susceptibility shape : (QUANTITY_NUM, QUANTITY_NUM, SUSCEPT_LENGTH), index : ijl
@@ -79,19 +56,37 @@ def plot_susceptibility(susceptibility):
 
 
 if __name__ == '__main__':
-    # make example data
-    QUANTITY_NUM = 3
-    TIME_LENGTH = 1000
-    SUSCEPT_LENGTH = 10
-    row_1 = [np.cos(2*np.pi*0.001*i) for i in range(TIME_LENGTH)]
-    row_2 = [np.sin(2*np.pi*0.002*i + 1) for i in range(TIME_LENGTH)]
-    row_3 = [np.cos(2*np.pi*0.003*i + 3) for i in range(TIME_LENGTH)]
+    time_array, Tip_flow, Shield_flow, Bypass_flow, Head_temp, Tip_temp = load_log('log.txt')
+    
+    time_from = datetime.datetime(2024, 9, 7, 12, 0, 0)
+    time_to = datetime.datetime(2024, 9, 8, 3, 0, 0)
+    time_array1, Tip_flow1, Shield_flow1, Bypass_flow1, Head_temp1, Tip_temp1 = cut_data_from_to(time_from, time_to, time_array, Tip_flow, Shield_flow, Bypass_flow, Head_temp, Tip_temp)
+    
+    time_from = datetime.datetime(2024, 9, 8, 13, 0, 0)
+    time_to = datetime.datetime(2024, 9, 9, 3, 0, 0)
+    time_array2, Tip_flow2, Shield_flow2, Bypass_flow2, Head_temp2, Tip_temp2 = cut_data_from_to(time_from, time_to, time_array, Tip_flow, Shield_flow, Bypass_flow, Head_temp, Tip_temp)
+    
+    time_from = datetime.datetime(2024, 9, 9, 7, 0, 0)
+    time_to = datetime.datetime(2024, 9, 9, 19, 40, 0)
+    time_array3, Tip_flow3, Shield_flow3, Bypass_flow3, Head_temp3, Tip_temp3 = cut_data_from_to(time_from, time_to, time_array, Tip_flow, Shield_flow, Bypass_flow, Head_temp, Tip_temp)
 
-    data_seq = torch.tensor(np.random.rand(QUANTITY_NUM, TIME_LENGTH))
-    diff_seq = make_diff_seq_torch(data_seq)
-    data_stride = make_data_stride_torch(data_seq, SUSCEPT_LENGTH)
-    D_tensor = make_D_tensor(diff_seq, data_stride)
-    Y_tensor = make_Y_tensor(data_stride)
-    susceptibility = make_susceptibility_tensor(D_tensor, Y_tensor)
+    time_from = datetime.datetime(2024, 9, 9, 21, 0, 0)
+    time_to = datetime.datetime(2024, 9, 10, 10, 0, 0)
+    time_array4, Tip_flow4, Shield_flow4, Bypass_flow4, Head_temp4, Tip_temp4 = cut_data_from_to(time_from, time_to, time_array, Tip_flow, Shield_flow, Bypass_flow, Head_temp, Tip_temp)
 
-    plot_susceptibility(susceptibility)
+    
+    SUSCEPT_LENGTH = 150
+    data_seq1 = SingleDataSeq(torch.tensor(np.array([Tip_flow1 + Shield_flow1, Head_temp1, Tip_temp1])), SUSCEPT_LENGTH)
+    data_seq2 = SingleDataSeq(torch.tensor(np.array([Tip_flow2 + Shield_flow2, Head_temp2, Tip_temp2])), SUSCEPT_LENGTH)
+    data_seq3 = SingleDataSeq(torch.tensor(np.array([Tip_flow3 + Shield_flow3, Head_temp3, Tip_temp3])), SUSCEPT_LENGTH)
+    data_seq4 = SingleDataSeq(torch.tensor(np.array([Tip_flow4 + Shield_flow4, Head_temp4, Tip_temp4])), SUSCEPT_LENGTH)
+
+    print(data_seq1.time_length)
+    print(data_seq2.time_length)
+    print(data_seq3.time_length)
+    print(data_seq4.time_length)
+
+    multi_data_seq = MultipleDataSeq([data_seq1, data_seq2, data_seq3, data_seq4], SUSCEPT_LENGTH)
+    # multi_data_seq = MultipleDataSeq([data_seq1, data_seq3], SUSCEPT_LENGTH)
+
+    plot_susceptibility(multi_data_seq.susceptibility_tensor)
