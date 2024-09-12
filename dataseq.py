@@ -80,8 +80,8 @@ class DataSeq(ABC):
         return 0
     
     @abstractmethod
-    def guess_next_data(self, guessing_length):
-        return 0
+    def change_suscept_length(self, new_suscept_length):
+        pass
 
 class SingleDataSeq(DataSeq):
     def __init__(self, data_seq, suscept_length):
@@ -163,6 +163,17 @@ class SingleDataSeq(DataSeq):
         loss_term2 = self.diff_seq
         loss = torch.sum((loss_term1 - loss_term2) ** 2)
         return loss
+    def change_suscept_length(self, new_suscept_length):
+        if new_suscept_length < 1:
+            raise ValueError("suscept_length must be greater than 0")
+        if new_suscept_length == self.suscept_length:
+            return
+        self._suscept_length = new_suscept_length
+        self._data_stride = self._make_data_stride()
+        self._D_tensor = self._make_D_tensor()
+        self._Y_tensor = self._make_Y_tensor()
+        self._susceptibility_tensor = self._make_susceptibility_tensor()
+
 class MultipleDataSeq(DataSeq):
     def __init__(self, data_seq, suscept_length):
         super().__init__(data_seq, suscept_length)
@@ -223,5 +234,13 @@ class MultipleDataSeq(DataSeq):
         loss = sum([torch.sum((loss_term1[i] - loss_term2[i]) ** 2) for i in range(len(loss_term1))])
         return loss
     
-    def guess_next_data(self, guessing_length):
-        return 0
+    def change_suscept_length(self, new_suscept_length):
+        if new_suscept_length < 1:
+            raise ValueError("suscept_length must be a positive integer")
+        if new_suscept_length == self.suscept_length:
+            return
+        self._suscept_length = new_suscept_length
+        self._data_stride = self._make_data_stride()
+        self._D_tensor = self._make_D_tensor()
+        self._Y_tensor = self._make_Y_tensor()
+        self._susceptibility_tensor = self._make_susceptibility_tensor()
