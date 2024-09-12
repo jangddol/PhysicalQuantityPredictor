@@ -8,7 +8,7 @@ Here, $\Delta t$ is a interval time of discrete time sequence.
 
 More strictly, in discrete time, pseudo-susceptibility $\chi$ is defined as
 
-$$\Delta^{(i)}(t_k) = \sum_{j=1}^N \sum_{l=0}^{n-1} \chi^{(i)}_{(j)}(l\cdot \Delta t) y^{(j)} (t_{k-l})$$
+$$\Delta^{(i)}(t_k) = \sum_{j=1}^N \sum_{l=0}^{n-1} \chi^{(i)}_{(j)} (l \cdot \Delta t) y^{(j)} (t _{k-l}) $$
 
 where,
 
@@ -16,7 +16,7 @@ $$
 \begin{aligned}
 t_k &= t_0 + k \cdot \Delta t
 \\
-\Delta^{(i)}(t_k) &= y^{(i)}(t_{k+1}) - y^{(i)}(t_k)
+\Delta^{(i)}(t_k) &= y^{(i)}(t _{k+1}) - y^{(i)}(t_k)
 \\
 N &= \text{the number of the physical quantities}
 \\
@@ -29,61 +29,61 @@ $$
 # 2. Solving Pseudo-Susceptibility
 Define the loss as following
 
-$$\mathscr{L} = \sum_{i=1}^N \sum_{k=n-1}^{T-1} \left(\Delta^{(i)}_{k} - \sum_{j=1}^N \sum_{l=0}^{n-1}\chi^{(i)}_{jl} y_{j, k-l}\right)^2$$
+$$\mathscr{L} = \sum _{i=1}^N \sum _{k=n-1}^{T-1} \left(\Delta^{(i)} _{k} - \sum _{j=1}^N \sum _{l=0}^{n-1} \chi^{(i)} _{jl} y _{j, k-l} \right)^2$$
 
 where,
 
 $$\begin{aligned}
-\Delta^{(i)}_k &= \Delta^{(i)}(t_k)
+\Delta^{(i)} _k &= \Delta^{(i)}(t_k)
 \\
-\chi^{(i)}_{jl} &= \chi^{(i)}_{(j)}(l\cdot\Delta t)
+\chi^{(i)} _{jl} &= \chi^{(i)} _{(j)}(l\cdot\Delta t)
 \\
-y_{j, k-l} &= y^{(j)}(t_{k-l})
+y _{j, k-l} &= y^{(j)}(t _{k-l})
 \end{aligned}$$
 
 Find minimum by using derivative:
 
-$$\frac{\partial \mathscr{L}}{\partial \chi^{(i')}_{j'l'}} = 2\sum_{k=n-1}^{T-1}\left(\Delta^{(i')}_{k} - \sum_{j=1}^N \sum_{l=0}^{n-1} \chi^{(i')}_{jl} y_{j,k-l}\right)\left(-y_{j', k-l'}\right) = 0$$
+$$\frac{\partial \mathscr{L}}{\partial \chi^{(i')} _{j'l'}} = 2\sum _{k=n-1}^{T-1} \left( \Delta^{(i')} _{k} - \sum _{j=1}^N \sum _{l=0}^{n-1} \chi^{(i')} _{jl} y _{j,k-l} \right) \left( -y _{j', k-l'} \right) = 0$$
 
 Therefore,
 
-$$\sum_{k=n-1}^{T-1} \Delta^{(i')}_k y_{j',k-l'} = \sum_{k=n-1}^{T-1} \sum_{j=1}^N \sum_{l=0}^{n-1} \chi^{(i')}_{jl} y_{j, k-l} y_{j', k-l'}$$
+$$\sum _{k=n-1}^{T-1} \Delta^{(i')} _k y _{j',k-l'} = \sum _{k=n-1}^{T-1} \sum _{j=1}^N \sum _{l=0}^{n-1} \chi^{(i')} _{jl} y _{j, k-l} y _{j', k-l'}$$
 
 Here, define new tensors: **D-tensor** and **Y_tensor**
 
 $$\begin{aligned}
-D^{(i)}_{jl} &\equiv \sum_{k=n-1}^{T-1} \Delta^{(i)}_k y_{j,k-l}
+D^{(i)} _{jl} &\equiv \sum _{k=n-1}^{T-1} \Delta^{(i)} _k y _{j,k-l}
 \\
-Y_{j'l'jl} &\equiv \sum_{k=n-1}^{T-1} y_{j, k-l} y_{j', k-l'}
+Y _{j'l'jl} &\equiv \sum _{k=n-1}^{T-1} y _{j, k-l} y _{j', k-l'}
 \end{aligned}$$
 
 Then, the final linear equation is the following:
 
-$$D^{(i')}_{j'l'} = \sum_{j=1}^N \sum_{l=0}^{n-1} Y_{j'l'jl} \,\chi^{(i')}_{jl}$$
+$$D^{(i')} _{j'l'} = \sum _{j=1}^N \sum _{l=0}^{n-1} Y _{j'l'jl} \,\chi^{(i')} _{jl}$$
 
 Therefore, the pseudo-susceptibility is
 
-$$\chi^{(i')}_{j'l'} = \sum_{j=1}^N \sum_{l=0}^{n-1} Y^{-1}_{j'l'jl} D^{(i')}_{jl}$$
+$$\chi^{(i')} _{j'l'} = \sum _{j=1}^N \sum _{l=0}^{n-1} Y^{-1} _{j'l'jl} D^{(i')} _{jl}$$
 
 # 3. w/ Multiple Sequences
 If you have multiple time sequences for same system, then you need to change the equations a little bit.
 
 $$\begin{aligned}
-\Delta^{(i)}(t^{[a]}_{k_a}) &= \sum_{j=1}^N \sum_{l=0}^{n-1} \chi^{(i)}_{(j)}(l\cdot \Delta t) y^{(j)} (t^{[a]}_{k-l})
+\Delta^{(i)}(t^{[a]} _{k_a}) &= \sum _{j=1}^N \sum _{l=0}^{n-1} \chi^{(i)} _{(j)}(l\cdot \Delta t) y^{(j)} (t^{[a]} _{k-l})
 \\
-\mathscr{L} &= \sum_{a=1}^A \sum_{k_a=n-1}^{T_a-1} \sum_{i=1}^N \left(\Delta^{(i)[a]}_{k} - \sum_{j=1}^N \sum_{l=0}^{n-1}\chi^{(i)}_{jl} y^{[a]}_{j, k-l}\right)^2 
+\mathscr{L} &= \sum _{a=1}^A \sum _{k_a=n-1}^{T_a-1} \sum _{i=1}^N \left( \Delta^{(i)[a]} _{k} - \sum _{j=1}^N \sum _{l=0}^{n-1} \chi^{(i)} _{jl} y^{[a]} _{j, k-l} \right)^2 
 \\
-\frac{\partial \mathscr{L}}{\partial \chi^{(i')}_{j'l'}} &= 2 \sum_{a=1}^A \sum_{k_a=n-1}^{T_a-1}\left(\Delta^{(i')[a]}_{k_a} - \sum_{j=1}^N \sum_{l=0}^{n-1} \chi^{(i')}_{jl} y^{[a]}_{j,k-l}\right)\left(-y^{[a]}_{j', k-l'}\right) = 0
+\frac{\partial \mathscr{L}}{\partial \chi^{(i')} _{j'l'}} &= 2 \sum _{a=1}^A \sum _{k_a=n-1}^{T_a-1} \left( \Delta^{(i')[a]} _{k_a} - \sum _{j=1}^N \sum _{l=0}^{n-1} \chi^{(i')} _{jl} y^{[a]} _{j,k-l} \right) \left( -y^{[a]} _{j', k-l'} \right) = 0
 \\
-\sum_{a=1}^A \sum_{k=n-1}^{T-1} \Delta^{(i')[a]}_{k_a} y^{[a]}_{j',k-l'} &= \sum_{a=1}^A \sum_{k_a=n-1}^{T_a-1} \sum_{j=1}^N \sum_{l=0}^{n-1} \chi^{(i')}_{jl} y^{[a]}_{j, k-l} y^{[a]}_{j', k-l'}
+\sum _{a=1}^A \sum _{k=n-1}^{T-1} \Delta^{(i')[a]} _{k_a} y^{[a]} _{j',k-l'} &= \sum _{a=1}^A \sum _{k_a=n-1}^{T_a-1} \sum _{j=1}^N \sum _{l=0}^{n-1} \chi^{(i')} _{jl} y^{[a]} _{j, k-l} y^{[a]} _{j', k-l'}
 \\
-D^{(i)}_{jl} &\equiv \sum_{a=1}^A \sum_{k_a=n-1}^{T_a-1} \Delta^{(i)[a]}_{k_a} y^{[a]}_{j,k-l}
+D^{(i)} _{jl} &\equiv \sum _{a=1}^A \sum _{k_a=n-1}^{T_a-1} \Delta^{(i)[a]} _{k_a} y^{[a]} _{j,k-l}
 \\
-Y_{j'l'jl} &\equiv \sum_{a=1}^A \sum_{k_a=n-1}^{T_a-1} y^{[a]}_{j, k-l} y^{[a]}_{j', k-l'}
+Y _{j'l'jl} &\equiv \sum _{a=1}^A \sum _{k_a=n-1}^{T_a-1} y^{[a]} _{j, k-l} y^{[a]} _{j', k-l'}
 \\
-D^{(i')}_{j'l'} &= \sum_{j=1}^N \sum_{l=0}^{n-1} Y_{j'l'jl} \,\chi^{(i')}_{jl}
+D^{(i')} _{j'l'} &= \sum _{j=1}^N \sum _{l=0}^{n-1} Y _{j'l'jl} \,\chi^{(i')} _{jl}
 \\
-\chi^{(i')}_{j'l'} &= \sum_{j=1}^N \sum_{l=0}^{n-1} Y^{-1}_{j'l'jl} D^{(i')}_{jl}
+\chi^{(i')} _{j'l'} &= \sum _{j=1}^N \sum _{l=0}^{n-1} Y^{-1} _{j'l'jl} D^{(i')} _{jl}
 \end{aligned}$$
 
 Here, $a$ is the index of data sequence, and $A$ is the number of data sequences.
