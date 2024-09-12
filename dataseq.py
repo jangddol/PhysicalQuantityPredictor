@@ -163,6 +163,20 @@ class SingleDataSeq(DataSeq):
         loss_term2 = self.diff_seq
         loss = torch.sum((loss_term1 - loss_term2) ** 2)
         return loss
+    
+    def _guess_one_next_data(self, base_last_index):
+        base_data_stride = self.data_seq[:, base_last_index - self.suscept_length + 1: base_last_index + 1]
+        guessed_data = torch.einsum('ijl,jkl->ik', self.susceptibility_tensor, base_data_stride)
+        return guessed_data
+
+    def guess_next_data(self, base_last_index, guessing_length):
+        # base_last_index : the last index of the base data
+        # guessing_length : the length of the data to be guessed
+        guessed_data = torch.zeros(self.quantity_num, guessing_length)
+        for i in range(guessing_length):
+            guessed_data[:, i] = self._guess_one_next_data(base_last_index + i)
+        return guessed_data
+    
     def change_suscept_length(self, new_suscept_length):
         if new_suscept_length < 1:
             raise ValueError("suscept_length must be greater than 0")
@@ -233,6 +247,9 @@ class MultipleDataSeq(DataSeq):
         loss_term2 = self.diff_seq
         loss = sum([torch.sum((loss_term1[i] - loss_term2[i]) ** 2) for i in range(len(loss_term1))])
         return loss
+    
+    def guess_next_data(self, seq_index, base_last_index, guessing_length):
+        return self.data_seq[seq_index].guess_next_data(base_last_index, guessing_length)
     
     def change_suscept_length(self, new_suscept_length):
         if new_suscept_length < 1:
