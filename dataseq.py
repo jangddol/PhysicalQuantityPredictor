@@ -148,7 +148,10 @@ class SingleDataSeq(DataSeq):
         # So, susceptibility = D_tensor * Y_tensor^-1
         Y_tensor_reshaped = self.Y_tensor.view(self.quantity_num * self.suscept_length, self.quantity_num * self.suscept_length)
         # Compute the inverse of the reshaped tensor
-        Y_tensor_inv_reshaped = torch.inverse(Y_tensor_reshaped)
+        try:
+            Y_tensor_inv_reshaped = torch.inverse(Y_tensor_reshaped)
+        except TypeError:
+            raise TypeError("Y tensor is not invertible. Plz try another way.")
         # Reshape back to the original 4D shape
         Y_tensor_inv = Y_tensor_inv_reshaped.view(self.quantity_num, self.suscept_length, self.quantity_num, self.suscept_length)
         
@@ -205,7 +208,10 @@ class MultipleDataSeq(DataSeq):
         # So, susceptibility = D_tensor * Y_tensor^-1
         Y_tensor_reshaped = self.Y_tensor.view(self.quantity_num * self.suscept_length, self.quantity_num * self.suscept_length)
         # Compute the inverse of the reshaped tensor
-        Y_tensor_inv_reshaped = torch.inverse(Y_tensor_reshaped)
+        try:
+            Y_tensor_inv_reshaped = torch.inverse(Y_tensor_reshaped)
+        except TypeError:
+            raise TypeError("Y tensor is not invertible. Plz try another way.")
         # Reshape back to the original 4D shape
         Y_tensor_inv = Y_tensor_inv_reshaped.view(self.quantity_num, self.suscept_length, self.quantity_num, self.suscept_length)
         
