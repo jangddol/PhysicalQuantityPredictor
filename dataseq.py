@@ -178,15 +178,7 @@ class SingleDataSeq(DataSeq):
         return guessed_data
     
     def change_suscept_length(self, new_suscept_length):
-        if new_suscept_length < 1:
-            raise ValueError("suscept_length must be greater than 0")
-        if new_suscept_length == self.suscept_length:
-            return
-        self._suscept_length = new_suscept_length
-        self._data_stride = self._make_data_stride()
-        self._D_tensor = self._make_D_tensor()
-        self._Y_tensor = self._make_Y_tensor()
-        self._susceptibility_tensor = self._make_susceptibility_tensor()
+        self.__init__(self.data_seq, new_suscept_length)
 
 class MultipleDataSeq(DataSeq):
     def __init__(self, data_seq, suscept_length):
@@ -252,12 +244,6 @@ class MultipleDataSeq(DataSeq):
         return self.data_seq[seq_index].guess_next_data(base_last_index, guessing_length)
     
     def change_suscept_length(self, new_suscept_length):
-        if new_suscept_length < 1:
-            raise ValueError("suscept_length must be a positive integer")
-        if new_suscept_length == self.suscept_length:
-            return
-        self._suscept_length = new_suscept_length
-        self._data_stride = self._make_data_stride()
-        self._D_tensor = self._make_D_tensor()
-        self._Y_tensor = self._make_Y_tensor()
-        self._susceptibility_tensor = self._make_susceptibility_tensor()
+        for data_seq in self.data_seq:
+            data_seq.change_suscept_length(new_suscept_length)
+        self.__init__(self.data_seq, new_suscept_length)
