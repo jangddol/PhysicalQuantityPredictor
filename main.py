@@ -54,6 +54,38 @@ def plot_susceptibility(susceptibility):
             axs[i, j].grid(True)
     plt.show()
 
+def show_consistency_for_susceptibility(multiple_data_seq:MultipleDataSeq, max_suscept_length):
+    fig, axs = plt.subplots(multiple_data_seq.quantity_num, multiple_data_seq.quantity_num, figsize=(10, 10))
+    for l in range(1, max_suscept_length+1):
+        multiple_data_seq.change_suscept_length(l)
+        for i in range(multiple_data_seq.quantity_num):
+            for j in range(multiple_data_seq.quantity_num):
+                axs[i, j].plot(multiple_data_seq.susceptibility_tensor[i, j, :].detach().numpy(), color=(l/max_suscept_length, 1 - l/max_suscept_length, 0))
+                axs[i, j].set_title(f'({i}, {j})')
+                axs[i, j].grid(True)
+    plt.show()
+
+def show_loss_by_suscept_length(multiple_data_seq:MultipleDataSeq, max_suscept_length):
+    loss_list = []
+    for l in range(1, max_suscept_length+1):
+        multiple_data_seq.change_suscept_length(l)
+        loss_list.append(multiple_data_seq.get_loss())
+    
+    plt.plot(range(1, max_suscept_length+1), loss_list)
+    plt.show()
+
+def show_susceptibility_fft(susceptibility):
+    # susceptibility shape : (QUANTITY_NUM, QUANTITY_NUM, SUSCEPT_LENGTH), index : ijl
+    # for each i, j, plot the susceptibility with different subplot
+    QUANTITY_NUM, _, _ = susceptibility.shape
+    fig, axs = plt.subplots(QUANTITY_NUM, QUANTITY_NUM, figsize=(10, 10))
+    for i in range(QUANTITY_NUM):
+        for j in range(QUANTITY_NUM):
+            fft = np.fft.fft(susceptibility[i, j, :].detach().numpy())
+            axs[i, j].plot(np.abs(fft))
+            axs[i, j].set_title(f'({i}, {j})')
+            axs[i, j].grid(True)
+    plt.show()
 
 if __name__ == '__main__':
     time_array, Tip_flow, Shield_flow, Bypass_flow, Head_temp, Tip_temp = load_log('log.txt')
@@ -75,18 +107,23 @@ if __name__ == '__main__':
     time_array4, Tip_flow4, Shield_flow4, Bypass_flow4, Head_temp4, Tip_temp4 = cut_data_from_to(time_from, time_to, time_array, Tip_flow, Shield_flow, Bypass_flow, Head_temp, Tip_temp)
 
     
-    SUSCEPT_LENGTH = 150
+    SUSCEPT_LENGTH = 110
     data_seq1 = SingleDataSeq(torch.tensor(np.array([Tip_flow1 + Shield_flow1, Head_temp1, Tip_temp1])), SUSCEPT_LENGTH)
     data_seq2 = SingleDataSeq(torch.tensor(np.array([Tip_flow2 + Shield_flow2, Head_temp2, Tip_temp2])), SUSCEPT_LENGTH)
     data_seq3 = SingleDataSeq(torch.tensor(np.array([Tip_flow3 + Shield_flow3, Head_temp3, Tip_temp3])), SUSCEPT_LENGTH)
-    data_seq4 = SingleDataSeq(torch.tensor(np.array([Tip_flow4 + Shield_flow4, Head_temp4, Tip_temp4])), SUSCEPT_LENGTH)
+    # data_seq4 = SingleDataSeq(torch.tensor(np.array([Tip_flow4 + Shield_flow4, Head_temp4, Tip_temp4])), SUSCEPT_LENGTH)
 
     print(data_seq1.time_length)
     print(data_seq2.time_length)
     print(data_seq3.time_length)
-    print(data_seq4.time_length)
+    # print(data_seq4.time_length)
 
-    multi_data_seq = MultipleDataSeq([data_seq1, data_seq2, data_seq3, data_seq4], SUSCEPT_LENGTH)
-    # multi_data_seq = MultipleDataSeq([data_seq1, data_seq3], SUSCEPT_LENGTH)
+    multi_data_seq = MultipleDataSeq([data_seq1, data_seq2, data_seq3], SUSCEPT_LENGTH)
 
-    plot_susceptibility(multi_data_seq.susceptibility_tensor)
+    # plot_susceptibility(multi_data_seq.susceptibility_tensor)
+    # show_consistency_for_susceptibility(multi_data_seq, SUSCEPT_LENGTH)
+    # show_loss_by_suscept_length(multi_data_seq, SUSCEPT_LENGTH)
+
+    multi_data_seq.change_suscept_length(110)
+    susceptibility = multi_data_seq.susceptibility_tensor
+    show_susceptibility_fft(susceptibility)
