@@ -69,7 +69,7 @@ def show_loss_by_suscept_length(multiple_data_seq:MultipleDataSeq, max_suscept_l
     loss_list = []
     for l in range(1, max_suscept_length+1):
         multiple_data_seq.change_suscept_length(l)
-        loss_list.append(multiple_data_seq.get_loss())
+        loss_list.append(multiple_data_seq.SSE)
     
     plt.plot(range(1, max_suscept_length+1), loss_list)
     plt.show()
@@ -120,10 +120,10 @@ if __name__ == '__main__':
 
     multi_data_seq = MultipleDataSeq([data_seq1, data_seq2, data_seq3], SUSCEPT_LENGTH)
 
-    # plot_susceptibility(multi_data_seq.susceptibility_tensor)
-    # show_consistency_for_susceptibility(multi_data_seq, SUSCEPT_LENGTH)
-    # show_loss_by_suscept_length(multi_data_seq, SUSCEPT_LENGTH)
+    plot_susceptibility(multi_data_seq.susceptibility_tensor)
+    show_consistency_for_susceptibility(multi_data_seq, SUSCEPT_LENGTH)
+    show_loss_by_suscept_length(multi_data_seq, SUSCEPT_LENGTH)
 
-    multi_data_seq.change_suscept_length(110)
-    susceptibility = multi_data_seq.susceptibility_tensor
-    show_susceptibility_fft(susceptibility)
+    # multi_data_seq.change_suscept_length(110)
+    # susceptibility = multi_data_seq.susceptibility_tensor
+    # show_susceptibility_fft(susceptibility)
